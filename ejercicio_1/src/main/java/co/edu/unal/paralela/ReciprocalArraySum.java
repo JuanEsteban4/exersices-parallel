@@ -104,6 +104,11 @@ public final class ReciprocalArraySum {
         private double value;
 
         /**
+         * Numero de elementos a calcular directamente
+         */
+        private static final int maxElements = 1000;
+
+        /**
          * Constructor.
          * @param setStartIndexInclusive establece el índice inicial para comenzar
          *        el recorrido trasversal.
@@ -127,11 +132,25 @@ public final class ReciprocalArraySum {
 
         @Override
         protected void compute() {
-            double temp = 0;
-            for (int i = startIndexInclusive; i < endIndexExclusive; i++) {
-                temp += 1 / input[i];
+            /*If less or equal than maxElements elements then sum directly*/
+
+            int lenght = endIndexExclusive - startIndexInclusive;
+            if (lenght <= maxElements){
+                double temp = 0;
+                for (int i = startIndexInclusive; i < endIndexExclusive; i++) {
+                    temp += 1 / input[i];
+                }
+                value = temp;
+            } else {
+                int mid = startIndexInclusive + lenght / 2;
+
+                ReciprocalArraySumTask left = new ReciprocalArraySumTask(startIndexInclusive, mid, input);
+                ReciprocalArraySumTask right = new ReciprocalArraySumTask(mid, endIndexExclusive, input);
+
+                invokeAll(left, right);
+
+                value = left.getValue() + right.getValue();
             }
-            value = temp;
         }
     }
 
@@ -161,7 +180,7 @@ public final class ReciprocalArraySum {
             }
         });
 
-        return left.value + right.value;
+        return (left.value + right.value);
     }
 
     /**
@@ -184,7 +203,7 @@ public final class ReciprocalArraySum {
             int end   = getChunkEndExclusive(i, numTasks, input.length);
             tasks[i]  = new ReciprocalArraySumTask(start, end, input);
         }
-        ForkJoinPool pool = new ForkJoinPool(numTasks);
+        ForkJoinPool pool = ForkJoinPool.commonPool();
 
         pool.invoke(new RecursiveAction() {
             @Override
