@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.HashMap;
 
 
@@ -105,15 +106,14 @@ public final class StudentAnalytics {
     public String mostCommonFirstNameOfInactiveStudentsParallelStream(
             final Student[] studentArray) {
             
-        HashMap<String,Integer> hmap = Arrays.stream(studentArray)
+        Map<String,Long> hmap = Arrays.stream(studentArray)
                  .parallel()
                  .filter(s -> !s.checkIsCurrent())
                  .collect(
-                     () -> new HashMap<String, Integer>(),
-                     (HashMap<String, Integer> map, Student s) -> 
-                         map.merge(s.getFirstName(), 1, Integer::sum),
-                     (HashMap<String, Integer> map1, HashMap<String, Integer> map2) -> 
-                         map2.forEach((k, v) -> map1.merge(k, v, Integer::sum))
+                    Collectors.groupingBy(
+                        Student::getFirstName,
+                        Collectors.counting()
+                    )
                  );
 
         return Collections.max(hmap.entrySet(), Map.Entry.comparingByValue()).getKey();

@@ -3,7 +3,7 @@ package co.edu.unal.paralela;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.ForkJoinPool;
-import java.util.ArrayList;
+
 /**
  * Clase que contiene los métodos para implementar la suma de los recíprocos de un arreglo usando paralelismo.
  */
@@ -159,8 +159,7 @@ public final class ReciprocalArraySum {
         // tarea para la segunda mitad
         ReciprocalArraySumTask right = new ReciprocalArraySumTask(input.length / 2, input.length, input);
 
-        ForkJoinPool pool;
-        // lanzar ambas en el pool y combinar
+        // lanzamos ambas en el pool y combinar
         ForkJoinTask.invokeAll(left, right);
 
         return left.getValue() + right.getValue();
@@ -186,7 +185,6 @@ public final class ReciprocalArraySum {
             int end   = getChunkEndExclusive(i, numTasks, input.length);
             tasks[i]  = new ReciprocalArraySumTask(start, end, input);
         }
-        //ForkJoinPool pool = ForkJoinPool.commonPool();
 
         ForkJoinPool pool = ForkJoinPool.commonPool();
 
