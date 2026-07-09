@@ -1,5 +1,6 @@
 package co.edu.unal.paralela;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.Phaser;
 
@@ -16,6 +17,12 @@ public class OneDimAveragingPhaserTest extends TestCase {
     private double[] createArray(final int N) {
         final double[] input = new double[N + 2];
         input[N + 1] = 1.0;
+
+        //Random to check
+        // Random rand = new Random();
+        // for(int i = 0; i < N + 2; i ++){
+        //     input[i] = rand.nextDouble();
+        // }
         return input;
     }
 
@@ -93,6 +100,11 @@ public class OneDimAveragingPhaserTest extends TestCase {
         double[] myVal = createArray(N);
         final double[] myNewRef = createArray(N);
         final double[] myValRef = createArray(N);
+        
+        // final double[] myNewRef = Arrays.copyOf(myNew, N);
+        // final double[] myValRef = Arrays.copyOf(myVal, N);
+
+
 
         final long barrierStartTime = System.currentTimeMillis();
         runParallelBarrier(niterations, myNew, myVal, N, ntasks);

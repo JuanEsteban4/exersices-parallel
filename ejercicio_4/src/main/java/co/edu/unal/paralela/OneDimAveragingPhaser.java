@@ -106,7 +106,6 @@ public final class OneDimAveragingPhaser {
     public static void runParallelFuzzyBarrier(final int iterations,
             final double[] myNew, final double[] myVal, final int n,
             final int tasks) {
-
         Phaser[] phs = new Phaser[tasks];
         for(int i=0;i<phs.length;i++){
             phs[i] = new Phaser(1);
@@ -114,37 +113,42 @@ public final class OneDimAveragingPhaser {
 
         Thread[] threads = new Thread[tasks];
 
+        int block_size = (n / tasks);
+
         for (int ii = 0; ii < tasks; ii++) {
+
             final int i = ii;
+
+            final int left = i * block_size + 1;
+            final int right = (i + 1) * block_size;
 
             threads[ii] = new Thread(() -> {
                 double[] threadPrivateMyVal = myVal;
                 double[] threadPrivateMyNew = myNew;
 
                 for (int iter = 0; iter < iterations; iter++) {
-                    final int left = i * (n / tasks) + 1;
-                    final int right = (i + 1) * (n / tasks);
+                    // Calculamos bordes pues de estos dependen los vecinos
+                    threadPrivateMyNew[left] = (threadPrivateMyVal[left - 1] + threadPrivateMyVal[left + 1]) / 2.0;
+                    threadPrivateMyNew[right] = (threadPrivateMyVal[right - 1] + threadPrivateMyVal[right + 1]) / 2.0;
 
-                    for (int j = left; j <= right; j++) {
-                        threadPrivateMyNew[j] = (threadPrivateMyVal[j - 1]
-                                + threadPrivateMyVal[j + 1]) / 2.0;
+                    // Al acabar de calcular los bordes hacemos arrive 
+                    int curPhase = phs[i].arrive();
+
+                    // Trabajamos el interior
+                    for (int j = left + 1; j < right; j++) {
+                        threadPrivateMyNew[j] = (threadPrivateMyVal[j - 1] + threadPrivateMyVal[j + 1]) / 2.0;
                     }
-//                    System.out.println("Arriving task: "+ i);
-                    phs[i].arrive();
-                    if(i-1>=0){
-//                        System.out.println("Arrived task "+ i +" Waiting for "+ (i-1));
-                        phs[i-1].awaitAdvance(1);
-                    }
-                    if(i+1<tasks){
-//                        System.out.println("Arrived task "+ i +" Waiting for "+ (i+1));
-                        phs[i+1].awaitAdvance(1);
-                    }
+
+                    // Checkeamos si los vecinos ya tienen sus bordes para pasar a la siguiente iteracion
+                    if (i - 1 >= 0) phs[i - 1].awaitAdvance(curPhase);
+                    if (i + 1 < tasks) phs[i + 1].awaitAdvance(curPhase);
 
                     double[] temp = threadPrivateMyNew;
                     threadPrivateMyNew = threadPrivateMyVal;
                     threadPrivateMyVal = temp;
                 }
             });
+
             threads[ii].start();
         }
 
